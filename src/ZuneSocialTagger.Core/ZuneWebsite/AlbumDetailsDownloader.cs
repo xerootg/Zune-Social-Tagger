@@ -1,14 +1,9 @@
-using Microsoft.Zune.Service;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.ServiceModel.Syndication;
 using System.Xml;
-using System.Xml.Linq;
-using TagLib.Ape;
 
 namespace ZuneSocialTagger.Core.ZuneWebsite
 {
@@ -94,7 +89,6 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
                     Artist = item.SelectSingleNode("primaryArtist/name", namespaceManager).InnerText,
                     ArtworkUrl = SyndicationExtensions.GetImageUrlFromElement(item.SelectSingleNode("image/id", namespaceManager).InnerText),
                     ReleaseYear = year,
-                    // Tracks are the elements within /feed/entry
                     Tracks = GetTracks(xmlDocument.SelectNodes("feed/entry", namespaceManager), namespaceManager, albumId).ToList(),
                     Genre = genre,
                     AlbumMediaId = albumId

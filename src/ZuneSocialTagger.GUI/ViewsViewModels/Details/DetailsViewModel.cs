@@ -13,7 +13,6 @@ using System;
 using GalaSoft.MvvmLight.Messaging;
 using ZuneSocialTagger.GUI.ViewsViewModels.Success;
 using ZuneSocialTagger.GUI.Controls;
-using System.Diagnostics;
 using Helpers = ZuneSocialTagger.GUI.Shared.Helpers;
 using System.IO;
 
