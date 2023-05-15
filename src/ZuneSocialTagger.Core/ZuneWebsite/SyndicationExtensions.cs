@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.ServiceModel.Syndication;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace ZuneSocialTagger.Core.ZuneWebsite
@@ -126,6 +127,13 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
             return imageElement != null
                        ? String.Format("{0}{1}?width=50&height=50", Urls.Image,
                                        imageElement.Elements().First().Value.ExtractGuidFromUrnUuid())
+                       : null;
+        }
+
+        public static string GetImageUrlFromElement(string imageElement)
+        {
+            return imageElement != null
+                       ? $"https://coverartarchive.org/release/{imageElement}/front-250"
                        : null;
         }
 

@@ -71,11 +71,11 @@ namespace ZuneSocialTagger.GUI
 
         private static void SetupBindings(StandardKernel container)
         {
-#if DEBUG
-            container.Bind<IZuneDatabaseReader>().To<TestZuneDatabaseReader>().InSingletonScope();
-#else
+//#if DEBUG
+//            container.Bind<IZuneDatabaseReader>().To<TestZuneDatabaseReader>().InSingletonScope();
+//#else
             container.Bind<IZuneDatabaseReader>().To<ZuneDatabaseReader>().InSingletonScope();
-#endif
+//#endif
             //Container.Bind<IApplicationViewModel>().To<ApplicationViewModel>();
             container.Bind<ViewLocator>().ToSelf().InSingletonScope();
 

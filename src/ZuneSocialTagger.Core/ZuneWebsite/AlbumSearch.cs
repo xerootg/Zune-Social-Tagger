@@ -21,7 +21,7 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
 
             try
             {
-                return ReadFromXmlDocument(XmlReader.Create(searchUrl));
+                return ReadFromXmlDocument(searchUrl);
             }
             catch (Exception ex)
             {
@@ -42,7 +42,7 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
 
             try
             {
-                return ReadFromXmlDocument(XmlReader.Create(artistAlbumsUrl));
+                return ReadFromXmlDocument(artistAlbumsUrl);
             }
             catch (Exception ex)
             {
@@ -52,23 +52,42 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
             return new List<WebAlbum>();
         }
 
-        private static IEnumerable<WebAlbum> ReadFromXmlDocument(XmlReader reader)
+        private static IEnumerable<WebAlbum> ReadFromXmlDocument(string searchUrl)
         {
-            SyndicationFeed feed = SyndicationFeed.Load(reader);
-
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(searchUrl);
+            XmlNamespaceManager namespaceManager = new XmlNamespaceManager(xmlDocument.NameTable);
+            namespaceManager.AddNamespace("a", "http://www.w3.org/2005/Atom");
+            var feed = xmlDocument.SelectNodes("/a:feed/a:entry", namespaceManager);
             if (feed != null)
             {
-                foreach (var item in feed.Items)
+                foreach (XmlNode item in feed)
                 {
+                    var genre = string.Empty;
+                    var year = string.Empty;
+                    try
+                    {
+                        genre = item.SelectSingleNode("a:primaryGenre", namespaceManager).InnerText;
+                    }
+                    catch { }
+
+                    try
+                    {
+                        var date = item.SelectSingleNode("a:releaseDate", namespaceManager).InnerText;
+                        year = DateTime.Parse(date).Year.ToString();
+                    }
+                    catch { }
                     yield return new WebAlbum
                          {
-                             Title = item.Title.Text,
-                             AlbumMediaId = item.Id.ExtractGuidFromUrnUuid(),
-                             Artist = item.GetArtist(),
-                             ArtworkUrl = item.GetArtworkUrl(),
-                             ReleaseYear = item.GetReleaseYear(),
-                             Genre = item.GetGenre()
-                         };
+                             Title = item.SelectSingleNode("a:title", namespaceManager).InnerText,
+                             AlbumMediaId = new Guid(item.SelectSingleNode("a:id", namespaceManager).InnerText),
+                             Artist = item.SelectSingleNode("a:primaryArtist/a:name", namespaceManager).InnerText,
+                             ArtworkUrl = SyndicationExtensions.GetImageUrlFromElement(item.SelectSingleNode("a:image/a:id", namespaceManager).InnerText),
+                             // this is probably wrong
+                             ReleaseYear = year,
+                             Genre = genre
+
+                    };
                 }
             }
         }

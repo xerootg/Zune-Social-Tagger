@@ -5,6 +5,7 @@ using System.ServiceModel.Syndication;
 using System.Threading;
 using System.Xml;
 using System.Diagnostics;
+using System.Net.Http;
 
 namespace ZuneSocialTagger.Core.ZuneWebsite
 {
@@ -16,7 +17,7 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
 
             try
             {
-                return ReadArtistsFromXmlDocument(XmlReader.Create(searchUrl));
+                return ReadArtistsFromXmlDocument(searchUrl);
             }
             catch (Exception ex)
             {
@@ -31,19 +32,24 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
             ThreadPool.QueueUserWorkItem(_ => callback(SearchFor(searchString).ToList()));
         }
 
-        private static IEnumerable<WebArtist> ReadArtistsFromXmlDocument(XmlReader reader)
+        private static IEnumerable<WebArtist> ReadArtistsFromXmlDocument(string searchUrl)
         {
-            SyndicationFeed feed = SyndicationFeed.Load(reader);
 
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(searchUrl);
+            XmlNamespaceManager namespaceManager = new XmlNamespaceManager(xmlDocument.NameTable);
+            namespaceManager.AddNamespace("a", "http://www.w3.org/2005/Atom");
+            var feed = xmlDocument.SelectNodes("/a:feed/a:entry",namespaceManager);
             if (feed != null)
             {
-                foreach (var item in feed.Items)
+                foreach (XmlNode item in feed)
                 {
+
                     yield return new WebArtist
-                                     {
-                                         Name = item.Title.Text,
-                                         Id = item.Id.ExtractGuidFromUrnUuid()
-                                     };
+                    {
+                        Name = item.SelectSingleNode("a:title", namespaceManager).InnerText,
+                        Id = new Guid(item.SelectSingleNode("a:id", namespaceManager).InnerText)
+                    };
                 }
             }
         }

@@ -1,3 +1,4 @@
+using Microsoft.Zune.Service;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,6 +7,8 @@ using System.Linq;
 using System.Net;
 using System.ServiceModel.Syndication;
 using System.Xml;
+using System.Xml.Linq;
+using TagLib.Ape;
 
 namespace ZuneSocialTagger.Core.ZuneWebsite
 {
@@ -31,8 +34,9 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
                 {
                     using (var response = request.EndGetResponse(ar))
                     {
-                        var reader = XmlReader.Create(response.GetResponseStream());
-                        callback.Invoke(null, GetAlbumDetails(reader));
+                        var doc = new XmlDocument();
+                        doc.Load(response.GetResponseStream());
+                        callback.Invoke(null, GetAlbumDetails(doc));
                     }
                 }
                 catch (WebException ex)
@@ -61,41 +65,90 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
             Aborted = true;
         }
 
-        private static WebAlbum GetAlbumDetails(XmlReader reader)
+        private static WebAlbum GetAlbumDetails(XmlDocument xmlDocument)
         {
-            var feed = SyndicationFeed.Load(reader);
+            XmlNamespaceManager namespaceManager = new XmlNamespaceManager(xmlDocument.NameTable);
+            namespaceManager.AddNamespace("a", "http://www.w3.org/2005/Atom");
+            var item = xmlDocument.SelectSingleNode("/feed", namespaceManager);
 
-            if (feed != null)
+            if (item != null)
             {
+                var genre = string.Empty;
+                var year = string.Empty;
+                try
+                {
+                    genre = item.SelectSingleNode("a:primaryGenre", namespaceManager).InnerText;
+                }
+                catch { }
+
+                try
+                {
+                    var date = item.SelectSingleNode("releaseDate", namespaceManager).InnerText;
+                    year = DateTime.Parse(date).Year.ToString();
+                }
+                catch { }
+                var albumId = new Guid(item.SelectSingleNode("a:id", namespaceManager).InnerText);
                 return new WebAlbum
                 {
-                    Title = feed.Title.Text,
-                    Artist = feed.GetArtist(),
-                    ArtworkUrl = feed.GetArtworkUrl(),
-                    ReleaseYear = feed.GetReleaseYear(),
-                    Tracks = GetTracks(feed).ToList(),
-                    Genre = feed.GetGenre(),
-                    AlbumMediaId = feed.Id.ExtractGuidFromUrnUuid()
+                    Title = item.SelectSingleNode("a:title", namespaceManager).InnerText,
+                    Artist = item.SelectSingleNode("primaryArtist/name", namespaceManager).InnerText,
+                    ArtworkUrl = SyndicationExtensions.GetImageUrlFromElement(item.SelectSingleNode("image/id", namespaceManager).InnerText),
+                    ReleaseYear = year,
+                    // Tracks are the elements within /feed/entry
+                    Tracks = GetTracks(xmlDocument.SelectNodes("feed/entry", namespaceManager), namespaceManager, albumId).ToList(),
+                    Genre = genre,
+                    AlbumMediaId = albumId
                 };
             }
 
             return null;
         }
 
-        private static IEnumerable<WebTrack> GetTracks(SyndicationFeed feed)
+        private static List<WebTrack> GetTracks(XmlNodeList feed, XmlNamespaceManager namespaceManager, Guid albumId)
         {
-            return feed.Items.Select(item => new WebTrack
+            var trackList = new List<WebTrack>();
+
+            foreach(XmlNode item in feed) 
             {
-                MediaId = item.Id.ExtractGuidFromUrnUuid(),
-                ArtistMediaId = item.GetArtistMediaIdFromTrack(),
-                AlbumMediaId = item.GetAlbumMediaIdFromTrack(),
-                Title = item.Title.Text,
-                DiscNumber = item.GetDiscNumber(),
-                TrackNumber = item.GetTrackNumberFromTrack(),
-                Genre = item.GetGenre(),
-                ContributingArtists = item.GetContributingArtists().ToList(),
-                Artist = item.GetArtist()
-            }).ToList();
+
+                var trackArtistId = new Guid();
+
+                try
+                {
+                    // each track should have a primary artist ID, else failover to album
+                    trackArtistId = new Guid(item.SelectSingleNode("primaryArtist/id").InnerText);
+
+                }
+                catch { }
+
+                var contributingArtists = new List<string>();
+
+                try
+                {
+                    foreach(XmlNode artist in item.SelectNodes("artists/artist/name")) 
+                    {
+                        contributingArtists.Add(artist.InnerText);
+                    }
+                }
+                catch { }
+
+
+                trackList.Add( new WebTrack
+                {
+                    MediaId = new Guid(item.SelectSingleNode("a:id", namespaceManager).InnerText),
+                    ArtistMediaId = trackArtistId,
+                    AlbumMediaId = albumId,
+                    Title = item.SelectSingleNode("a:title", namespaceManager).InnerText,
+                    DiscNumber = item.SelectSingleNode("discNumber").InnerText,
+                    TrackNumber = item.SelectSingleNode("trackNumber").InnerText,
+                    Genre = string.Empty, // Our API does not return this value :(
+                    //Genre = item.GetGenre(),
+                    ContributingArtists = contributingArtists,
+                    Artist = item.SelectSingleNode("primaryArtist/name", namespaceManager).InnerText
+                });
+            }
+
+            return trackList;
         }
     }
 }
