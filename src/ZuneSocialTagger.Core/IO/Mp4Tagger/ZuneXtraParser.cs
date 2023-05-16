@@ -38,6 +38,11 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
                     int partNameLength = readInt(binReader); //get length of the part
                     string partName = getPartName(binReader, partNameLength); // get the name of the part
 
+                    if (string.IsNullOrEmpty(partName)) 
+                    {
+                        continue;
+                    }
+
                     int toRead = partLength - (4 + 4 + partName.Length);
                     byte[] restOfPart = new byte[toRead];
                     binReader.Read(restOfPart, 0, toRead);

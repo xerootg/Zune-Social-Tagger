@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
-using System.Windows.Threading;
 using GalaSoft.MvvmLight.Command;
 using GalaSoft.MvvmLight.Messaging;
 using GalaSoft.MvvmLight.Threading;
@@ -23,8 +22,6 @@ using System.Windows.Input;
 using SortOrder = ZuneSocialTagger.GUI.ViewsViewModels.WebAlbumList.SortOrder;
 using ZuneSocialTagger.Core;
 using Ninject;
-using System.Windows.Navigation;
-using System.Windows;
 
 namespace ZuneSocialTagger.GUI.ViewsViewModels.Application
 {

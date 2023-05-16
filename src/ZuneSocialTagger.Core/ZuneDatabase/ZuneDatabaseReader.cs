@@ -8,7 +8,7 @@ namespace ZuneSocialTagger.Core.ZuneDatabase
 {
     public class ZuneDatabaseReader : IZuneDatabaseReader
     {
-        private ZuneLibrary _zuneLibrary;
+        private static ZuneLibrary _zuneLibrary;
 
         public event Action FinishedReadingAlbums = delegate { };
         public event Action<int, int> ProgressChanged = delegate { };
@@ -26,8 +26,7 @@ namespace ZuneSocialTagger.Core.ZuneDatabase
 
             if (num > -1)
             {
-                int phase2;
-                _zuneLibrary.Phase2Initialization(out phase2);
+                _zuneLibrary.Phase2Initialization(out _);
                 _zuneLibrary.CleanupTransientMedia();
             }
             else
