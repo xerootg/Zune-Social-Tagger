@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZuneSocialTagger.GUI", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZuneSocialTagger.Tests", "src\ZuneSocialTagger.Tests\ZuneSocialTagger.Tests.csproj", "{F1AC70D5-830C-414C-8E7E-35E3B53E5B1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoTaggerCLI", "AutoTaggerCLI\AutoTaggerCLI.csproj", "{F4164469-1DD5-4492-A3A1-A8315B156133}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -26,6 +28,10 @@ Global
 		{F1AC70D5-830C-414C-8E7E-35E3B53E5B1D}.Debug|x64.Build.0 = Debug|x64
 		{F1AC70D5-830C-414C-8E7E-35E3B53E5B1D}.Release|x64.ActiveCfg = Release|x64
 		{F1AC70D5-830C-414C-8E7E-35E3B53E5B1D}.Release|x64.Build.0 = Release|x64
+		{F4164469-1DD5-4492-A3A1-A8315B156133}.Debug|x64.ActiveCfg = Debug|x64
+		{F4164469-1DD5-4492-A3A1-A8315B156133}.Debug|x64.Build.0 = Debug|x64
+		{F4164469-1DD5-4492-A3A1-A8315B156133}.Release|x64.ActiveCfg = Release|x64
+		{F4164469-1DD5-4492-A3A1-A8315B156133}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

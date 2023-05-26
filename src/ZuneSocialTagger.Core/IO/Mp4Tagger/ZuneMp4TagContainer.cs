@@ -61,6 +61,7 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
             newXtraBox.Data = ZuneXtraParser.ConstructRawData(parts);
 
             udataBox.AddChild(newXtraBox);
+            _mp4File.Save();
         }
 
         private IEnumerable<IBasePart> GetParts()

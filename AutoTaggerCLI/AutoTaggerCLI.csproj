@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\ZuneSocialTagger.Core\ZuneSocialTagger.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="taglib-sharp">
+      <HintPath>..\libs\taglibsharp\taglib-sharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

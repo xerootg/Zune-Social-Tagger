@@ -10,16 +10,22 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
 
         public virtual byte[] Render()
         {
-            var nameLength = ByteHelpers.GetBytesAsLi(Name.Length);
-            var name = Encoding.Default.GetBytes(Name);
+            var keyNameLength = ByteHelpers.GetBytesAsLi(Name.Length);
+            var keyName = Encoding.Default.GetBytes(Name);
 
-            var partContentWithoutLength = nameLength.Concat(name)
-                                                     .Concat(Content);
+            var partContentWithoutLength = new byte[keyNameLength.Length + keyName.Length + Content.Length];
+            keyNameLength.CopyTo(partContentWithoutLength, 0);
+            keyName.CopyTo(partContentWithoutLength, keyNameLength.Length);
+            Content.CopyTo(partContentWithoutLength, keyNameLength.Length + keyName.Length);
 
             //+4 is for the part length
-            byte[] totalPartLength = ByteHelpers.GetBytesAsLi(partContentWithoutLength.Count() + 4);
+            byte[] keySize = ByteHelpers.GetBytesAsLi(partContentWithoutLength.Length + 4);
 
-            return totalPartLength.Concat(partContentWithoutLength).ToArray();
+            var completeKvp = new byte[partContentWithoutLength.Length + keySize.Length];
+            keySize.CopyTo(completeKvp, 0);
+            partContentWithoutLength.CopyTo(completeKvp, keySize.Length);
+            
+            return completeKvp;
         }
     }
 }

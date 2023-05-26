@@ -33,15 +33,15 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
                 while (binReader.BaseStream.Position < binReader.BaseStream.Length)
                 {
                     //at a minimum we should be able to parse the length, name length and name
-
                     int partLength = readInt(binReader); //first 4 bytes donates the length of the part
+
+                    if(partLength > binReader.BaseStream.Length - (binReader.BaseStream.Position - 4))
+                    {
+                        // the length of the payload cannot be larger than the remaining bytes. this is corruption.
+                        return parts;
+                    }
                     int partNameLength = readInt(binReader); //get length of the part
                     string partName = getPartName(binReader, partNameLength); // get the name of the part
-
-                    if (string.IsNullOrEmpty(partName)) 
-                    {
-                        continue;
-                    }
 
                     int toRead = partLength - (4 + 4 + partName.Length);
                     byte[] restOfPart = new byte[toRead];
@@ -49,13 +49,22 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
 
                     try
                     {
-                        if (isGuidPart(restOfPart)) 
+                        switch (GetPartType(restOfPart))
                         {
-                            parts.Add(new GuidPart(partName, restOfPart));
-                        } 
-                        else
-                        {
-                            parts.Add(new RawPart{Name = partName, Content = restOfPart});
+                            case 72:
+                            {
+                                parts.Add(new GuidPart(partName, restOfPart));
+                                break;
+                            }
+                            case 8: // unicode
+                            case 19: // int64
+                            case 21: // filetime
+                            default:
+                            {
+                                parts.Add(new RawPart{Name = partName, Content = restOfPart});
+                                break;
+                            }
+
                         }
                     }
                     catch (Exception ex)
@@ -67,57 +76,59 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
             return parts;
         }
 
-        private static bool isGuidPart(byte[] partData) 
+        private static int GetValueCount(byte[] partData)
         {
             using (var memStream = new MemoryStream(partData))
             using (var binReader = new BinaryReader(memStream)) 
             {
-                int partFlag = readInt(binReader);
+                return readInt(binReader); // number of underlying values
+            }
+        }
 
-                if (partFlag == 1)
+        private static int GetPartType(byte[] partData)
+        {
+            using (var memStream = new MemoryStream(partData))
+            using (var binReader = new BinaryReader(memStream)) 
+            {
+                int partCount = readInt(binReader); // number of underlying values.
+
+                // we only support single value entities, so -1 causes default in the switch, and therefore raw, which just doesnt care
+                if (partCount == 1)
                 {
-                    int partContentLength = readInt(binReader);
-                    short partType = readShort(binReader); // this is a 2 byte id which tells us what it is
-
-                    if (partType == 72) // 72 == guid
-                    {
-                        return true;
-                    }
+                    _ = readInt(binReader); // this is the size of this value, which will be parsed in the type handler
+                    return readShort(binReader); // this is a 2 byte id which tells us what it is
                 }
             }
-            return false;
+            return -1;
         }
 
         private static int readInt(BinaryReader reader)
         {
-            var atomLengthBuf = new byte[4];
-            reader.Read(atomLengthBuf, 0, atomLengthBuf.Length);
+            var bytes = reader.ReadBytes(4);
 
-            if (BitConverter.IsLittleEndian) Array.Reverse(atomLengthBuf);
-            return BitConverter.ToInt32(atomLengthBuf, 0);
+            if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+            return BitConverter.ToInt32(bytes, 0);
         }
 
         private static short readShort(BinaryReader reader)
         {
-            var atomLengthBuf = new byte[2];
-            reader.Read(atomLengthBuf, 0, atomLengthBuf.Length);
+            var bytes = reader.ReadBytes(2);
 
-            if (BitConverter.IsLittleEndian) Array.Reverse(atomLengthBuf);
-            return BitConverter.ToInt16(atomLengthBuf, 0);
+            if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+            return BitConverter.ToInt16(bytes, 0);
         }
 
         /// <summary>
         /// The atom name is always 4 bytes long and is a string
         /// </summary>
         /// <returns></returns>
-        private static string getPartName(BinaryReader reader, long length)
+        private static string getPartName(BinaryReader reader, int length)
         {
-            var atomNameBuf = new byte[length];
-            reader.Read(atomNameBuf, 0, atomNameBuf.Length);
+            var atomNameBuf = reader.ReadBytes(length);
 
-            if (atomNameBuf.Count() > 0)
+            if (atomNameBuf.Count() > 0 && atomNameBuf[0] != 0)
             {
-                return atomNameBuf[0] == 0 ? String.Empty : Encoding.Default.GetString(atomNameBuf);
+                return Encoding.Default.GetString(atomNameBuf);
             }
             else
             {
