@@ -27,59 +27,68 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
         {
             var parts = new List<IBasePart>();
 
-            using (var memStream = new MemoryStream(atomContents))
-            using (var binReader = new BinaryReader(memStream))
+            try
             {
-                while (binReader.BaseStream.Position < binReader.BaseStream.Length)
+                using (var memStream = new MemoryStream(atomContents))
+                using (var binReader = new BinaryReader(memStream))
                 {
-                    //at a minimum we should be able to parse the length, name length and name
-                    int partLength = readInt(binReader); //first 4 bytes donates the length of the part
-
-                    if(partLength > binReader.BaseStream.Length - (binReader.BaseStream.Position - 4))
+                    while (binReader.BaseStream.Position < binReader.BaseStream.Length)
                     {
-                        // the length of the payload cannot be larger than the remaining bytes. this is corruption.
-                        return parts;
-                    }
-                    int partNameLength = readInt(binReader); //get length of the part
-                    string partName = getPartName(binReader, partNameLength); // get the name of the part
+                        //at a minimum we should be able to parse the length, name length and name
+                        int partLength = readInt(binReader); //first 4 bytes donates the length of the part
 
-                    int toRead = partLength - (4 + 4 + partName.Length);
-                    byte[] restOfPart = new byte[toRead];
-                    binReader.Read(restOfPart, 0, toRead);
-
-                    try
-                    {
-                        switch (GetPartType(restOfPart))
+                        if (partLength > binReader.BaseStream.Length - (binReader.BaseStream.Position - 4))
                         {
-                            case 72:
-                            {
-                                parts.Add(new GuidPart(partName, restOfPart));
-                                break;
-                            }
-                            case 8: // unicode
-                            case 19: // int64
-                            case 21: // filetime
-                            default:
-                            {
-                                parts.Add(new RawPart{Name = partName, Content = restOfPart});
-                                break;
-                            }
+                            // the length of the payload cannot be larger than the remaining bytes. this is corruption.
+                            return parts;
+                        }
+                        int partNameLength = readInt(binReader); //get length of the part
+                        string partName = getPartName(binReader, partNameLength); // get the name of the part
 
+                        int toRead = partLength - (4 + 4 + partName.Length);
+                        byte[] restOfPart = new byte[toRead];
+                        binReader.Read(restOfPart, 0, toRead);
+
+                        try
+                        {
+                            switch (GetPartType(restOfPart))
+                            {
+                                case 72:
+                                    {
+                                        parts.Add(new GuidPart(partName, restOfPart));
+                                        break;
+                                    }
+                                case 8: // unicode
+                                case 19: // int64
+                                case 21: // filetime
+                                default:
+                                    {
+                                        parts.Add(new RawPart { Name = partName, Content = restOfPart });
+                                        break;
+                                    }
+
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            parts.Add(new RawPart() { Name = partName, Content = restOfPart });
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        parts.Add(new RawPart() {Name = partName, Content = restOfPart});
-                    }
                 }
+            } catch (Exception e)
+            {
+                // I hate this format
+                Console.WriteLine($"ERROR: Xtra atom is borked, nuking it into orbit: {e}");
+                parts = new List<IBasePart>();
             }
             return parts;
+
         }
 
         private static int GetValueCount(byte[] partData)
         {
             using (var memStream = new MemoryStream(partData))
-            using (var binReader = new BinaryReader(memStream)) 
+            using (var binReader = new BinaryReader(memStream))
             {
                 return readInt(binReader); // number of underlying values
             }
@@ -88,7 +97,7 @@ namespace ZuneSocialTagger.Core.IO.Mp4Tagger
         private static int GetPartType(byte[] partData)
         {
             using (var memStream = new MemoryStream(partData))
-            using (var binReader = new BinaryReader(memStream)) 
+            using (var binReader = new BinaryReader(memStream))
             {
                 int partCount = readInt(binReader); // number of underlying values.
 

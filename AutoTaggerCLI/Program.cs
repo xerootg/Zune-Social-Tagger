@@ -22,6 +22,10 @@ internal class Program
         if (Directory.Exists(args[0]))
         {
             var fileList = GetFiles(rootFolder).ToArray();
+            // foreach(var file in fileList)
+            // {
+            //     HandleFile(file);
+            // }
             Parallel.ForEach(fileList,HandleFile);
 
             Console.WriteLine($"INFO: Complete! applied all tags to {filesProcessed}, partial to {partialTagged}, and skipped {noTags} files.");
@@ -38,7 +42,7 @@ internal class Program
     {
         if (KnownExtension.Any(x => file.EndsWith(x, StringComparison.InvariantCultureIgnoreCase)))
         {
-            // Console.WriteLine($"DEBUG: opening {file}");
+            Console.WriteLine($"DEBUG: opening {file}");
             if (TryConvertMBtoZuneTagObject(file, out var attributes))
             {
                 var container = ZuneTagContainerFactory.GetContainer(file);
@@ -72,7 +76,7 @@ internal class Program
                 noTags++;
                 Console.WriteLine($"WARN: No MB tags found: {file}");
             }
-            // Console.WriteLine($"DEBUG: Done with {file}");
+            Console.WriteLine($"DEBUG: Done with {file}");
         }
     }
 
