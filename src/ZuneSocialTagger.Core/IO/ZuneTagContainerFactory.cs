@@ -20,7 +20,10 @@ namespace ZuneSocialTagger.Core.IO
             {
                 try
                 {
-                    return new ZuneMP3TagContainer(TagLib.File.Create(path));
+                    using (var container = TagLib.File.Create(path))
+                    {
+                        return new ZuneMP3TagContainer(container);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -28,7 +31,7 @@ namespace ZuneSocialTagger.Core.IO
 
                     if (ex.InnerException != null)
                         excep = ex.InnerException;
-                    
+
                     throw new AudioFileReadException("Couldn't read: " + path + " Error: " + ex.Message, excep);
                 }
             }
@@ -37,7 +40,10 @@ namespace ZuneSocialTagger.Core.IO
             {
                 try
                 {
-                    return new ZuneWMATagContainer(TagLib.File.Create(path));
+                    using (var container = TagLib.File.Create(path))
+                    {
+                        return new ZuneWMATagContainer(container);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -49,7 +55,10 @@ namespace ZuneSocialTagger.Core.IO
             {
                 try
                 {
-                    return new ZuneMp4TagContainer(TagLib.File.Create(path));
+                    using (var container = TagLib.File.Create(path))
+                    {
+                        return new ZuneMp4TagContainer(container);
+                    }
                 }
                 catch (Exception ex)
                 {

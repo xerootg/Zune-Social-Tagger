@@ -38,7 +38,7 @@ namespace ZuneSocialTagger.Core.ZuneWebsite
                 {
                     callback.Invoke(ex, null);
                 }
-                catch (IOException ex)
+                catch
                 {
                     //callback.Invoke(ex, null);
                     //TODO: log web response fail (usually after abort)
